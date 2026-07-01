@@ -99,14 +99,40 @@
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
   }
 
-  // Simple contact form handler (no backend)
+  // Contact form handler — POSTs to Formspree
   var form = document.querySelector('.quote-form');
   if (form) {
     form.addEventListener('submit', function (e) {
       e.preventDefault();
-      var note = form.querySelector('.form-success');
-      if (note) note.style.display = 'block';
-      form.reset();
+      var successNote = form.querySelector('.form-success');
+      var errorNote = form.querySelector('.form-error');
+      var submitBtn = form.querySelector('button[type="submit"]');
+      var originalBtnText = submitBtn ? submitBtn.textContent : '';
+      if (successNote) successNote.style.display = 'none';
+      if (errorNote) errorNote.style.display = 'none';
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Sending…'; }
+
+      var data = new FormData(form);
+      fetch(form.action, {
+        method: 'POST',
+        body: data,
+        headers: { 'Accept': 'application/json' }
+      }).then(function (response) {
+        if (response.ok) {
+          if (successNote) successNote.style.display = 'block';
+          form.reset();
+        } else {
+          response.json().then(function (data) {
+            if (errorNote) errorNote.style.display = 'block';
+          }).catch(function () {
+            if (errorNote) errorNote.style.display = 'block';
+          });
+        }
+      }).catch(function () {
+        if (errorNote) errorNote.style.display = 'block';
+      }).finally(function () {
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = originalBtnText; }
+      });
     });
   }
 })();
